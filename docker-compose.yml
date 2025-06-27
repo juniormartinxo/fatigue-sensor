@@ -1,0 +1,86 @@
+services:
+  fatigue-sensor:
+    build: .
+    container_name: fatigue-sensor
+    stdin_open: true
+    tty: true
+    network_mode: host
+    
+    # Variáveis de ambiente
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - PULSE_SERVER=unix:/tmp/pulse-socket
+    
+    # Volumes para X11 e áudio
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev/shm:/dev/shm:rw
+      - /etc/pulse:/etc/pulse:ro
+      - /tmp/pulse-socket:/tmp/pulse-socket:rw
+      - ~/.pulse:/home/appuser/.pulse:rw
+      
+    # Acesso aos dispositivos
+    devices:
+      - /dev/video0:/dev/video0    # Webcam principal
+      - /dev/video1:/dev/video1    # Webcam secundária (se houver)
+      - /dev/snd:/dev/snd          # Dispositivos de áudio
+      
+    # Privilégios necessários para acesso aos dispositivos
+    privileged: false
+    cap_add:
+      - SYS_ADMIN
+      
+    # Grupos do usuário para acesso aos dispositivos
+    group_add:
+      - audio
+      - video
+      
+    # Restart policy
+    restart: unless-stopped
+    
+    # Comando personalizado (pode ser sobrescrito)
+    command: python3 main.py
+    
+  # Serviço opcional para desenvolvimento/debug
+  fatigue-sensor-dev:
+    build: .
+    container_name: fatigue-sensor-dev
+    profiles: ["dev"]
+    stdin_open: true
+    tty: true
+    network_mode: host
+    
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - PULSE_SERVER=unix:/tmp/pulse-socket
+    
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev/shm:/dev/shm:rw
+      - /etc/pulse:/etc/pulse:ro
+      - /tmp/pulse-socket:/tmp/pulse-socket:rw
+      - ~/.pulse:/home/appuser/.pulse:rw
+      # Volume para desenvolvimento - mapeia código local
+      - .:/app:rw
+      
+    devices:
+      - /dev/video0:/dev/video0
+      - /dev/video1:/dev/video1
+      - /dev/snd:/dev/snd
+      
+    privileged: false
+    cap_add:
+      - SYS_ADMIN
+      
+    group_add:
+      - audio
+      - video
+      
+    # Para desenvolvimento, override para bash
+    command: bash
+    
+networks:
+  default:
+    name: fatigue-sensor-network 
