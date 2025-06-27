@@ -515,10 +515,6 @@ O sistema fornece logs em tempo real no terminal:
 
 Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
 
-## 👥 Autores
-
-- **[Nome do Estudante]** - Desenvolvimento inicial - [GitHub Profile]
-
 ## 🙏 Agradecimentos
 
 - OpenCV Community
