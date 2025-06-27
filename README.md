@@ -120,6 +120,7 @@ chmod +x install.sh
 ```
 
 O script automaticamente:
+
 - ✅ Verifica se Docker e Docker Compose estão instalados
 - ✅ Baixa o modelo de marcos faciais necessário
 - ✅ Configura permissões do X11 para interface gráfica
@@ -386,6 +387,7 @@ MAR = (|p51-p59| + |p53-p57|) / (2 * |p49-p55|)
 #### "Erro: não é possível acessar a câmera no container"
 
 **Soluções**:
+
 ```bash
 # Verificar se a câmera está disponível
 ls -la /dev/video*
@@ -400,6 +402,7 @@ xhost +local:docker
 #### "Interface gráfica não aparece"
 
 **Soluções**:
+
 ```bash
 # Para WSL2 (Windows)
 # Instalar um servidor X11 como VcXsrv ou Xming
@@ -417,6 +420,7 @@ xhost +local:docker
 #### "Container não constrói corretamente"
 
 **Soluções**:
+
 ```bash
 # Limpar cache do Docker
 docker system prune -a
