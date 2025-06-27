@@ -32,10 +32,10 @@ Execute o script de configuração automática:
 
 ```bash
 # Torna o script executável (se necessário)
-chmod +x docker-setup.sh
+chmod +x install.sh
 
 # Executa o setup
-./docker-setup.sh
+./install.sh
 ```
 
 ### 2. Execução Manual
@@ -287,7 +287,7 @@ sono/
 ├── Dockerfile              # Definição da imagem
 ├── docker-compose.yml      # Orquestração dos serviços
 ├── .dockerignore           # Arquivos excluídos do build
-├── docker-setup.sh         # Script de configuração automática
+├── install.sh              # Script de instalação automática
 ├── DOCKER.md               # Este guia
 └── .env                    # Variáveis de ambiente (criado automaticamente)
 ```
@@ -308,7 +308,7 @@ Para contribuir com melhorias no setup Docker:
 Se encontrar problemas com o Docker:
 
 1. Verifique os logs: `docker-compose logs`
-2. Execute o diagnóstico: `./docker-setup.sh`
+2. Execute o diagnóstico: `./install.sh`
 3. Consulte a seção de resolução de problemas acima
 4. Abra uma issue no repositório com detalhes do erro
 
