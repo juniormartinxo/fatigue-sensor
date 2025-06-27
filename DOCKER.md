@@ -1,6 +1,6 @@
 # 🐳 Guia Docker - FatigueSensor
 
-Este guia explica como executar o FatigueSensor utilizando Docker e Docker Compose.
+Este guia explica como executar o FatigueSensor utilizando Docker e Docker Compose de forma simples e eficiente.
 
 ## 📋 Pré-requisitos
 
@@ -8,7 +8,7 @@ Este guia explica como executar o FatigueSensor utilizando Docker e Docker Compo
 - **Docker Compose**: Versão 2.0 ou superior  
 - **Webcam**: Câmera USB ou integrada
 - **Sistema de Áudio**: Para alertas sonoros
-- **Linux/WSL**: Sistema compatível com X11
+- **Linux/WSL2**: Sistema compatível com X11 (recomendado)
 
 ### Verificação dos Pré-requisitos
 
@@ -22,28 +22,40 @@ ls /dev/video*
 
 # Verificar dispositivos de áudio
 ls /dev/snd/
+
+# Verificar sistema X11 (Linux)
+echo $DISPLAY
 ```
 
 ## 🚀 Início Rápido
 
-### 1. Setup Automático
+### 1. Setup Automático (Recomendado)
 
-Execute o script de configuração automática:
+Execute o script de configuração automática que faz todo o trabalho pesado:
 
 ```bash
-# Torna o script executável (se necessário)
-chmod +x install.sh
+# Clone o repositório
+git clone https://github.com/seu-usuario/fatigue-sensor.git
+cd fatigue-sensor
 
-# Executa o setup
+# Torne o script executável e execute
+chmod +x install.sh
 ./install.sh
 ```
 
+**O que o script faz automaticamente:**
+- ✅ Verifica pré-requisitos (Docker, câmera, áudio)
+- ✅ Configura permissões do X11 para interface gráfica
+- ✅ Baixa o modelo de marcos faciais (shape_predictor_68_face_landmarks.dat)
+- ✅ Cria arquivo de configuração (.env)
+- ✅ Mostra todos os comandos disponíveis
+
 ### 2. Execução Manual
 
-Se preferir configurar manualmente:
+Se preferir configurar passo a passo:
 
 ```bash
-# Permitir acesso ao X11
+# Permitir acesso ao X11 (Linux/WSL)
 xhost +local:docker
 
 # Criar arquivo .env
@@ -58,27 +70,34 @@ docker-compose up --build
 ### Construção e Execução
 
 ```bash
-# Construir imagem e executar serviço
+# Construir e executar o serviço principal
 docker-compose up --build
 
-# Executar em background
+# Executar em background (daemon)
 docker-compose up -d
 
-# Forçar reconstrução
+# Forçar reconstrução completa
 docker-compose build --no-cache
+docker-compose up
+
+# Executar apenas uma vez (sem restart automático)
+docker-compose run --rm fatigue-sensor
 ```
 
 ### Controle de Serviços
 
 ```bash
-# Parar serviços
+# Parar todos os serviços
 docker-compose down
 
-# Parar e remover volumes
+# Parar e remover volumes persistentes
 docker-compose down -v
 
-# Reiniciar serviços
-docker-compose restart
+# Reiniciar serviços específicos
+docker-compose restart fatigue-sensor
+
+# Parar apenas um serviço
+docker-compose stop fatigue-sensor
 ```
 
 ### Logs e Monitoramento
@@ -88,10 +107,13 @@ docker-compose restart
 docker-compose logs -f
 
 # Ver logs de serviço específico
-docker-compose logs fatigue-sensor
+docker-compose logs -f fatigue-sensor
 
-# Ver logs das últimas 50 linhas
+# Ver últimas 50 linhas dos logs
 docker-compose logs --tail=50
+
+# Logs sem timestamps
+docker-compose logs --no-log-prefix
 ```
 
 ## ⚙️ Configurações Avançadas
@@ -99,55 +121,106 @@ docker-compose logs --tail=50
 ### Parâmetros Personalizados
 
 ```bash
-# Executar com parâmetros específicos
-docker-compose run fatigue-sensor python3 main.py --ear-threshold 0.22 --mar-threshold 0.70
+# Executar com limiares customizados
+docker-compose run --rm fatigue-sensor python3 main.py --ear-threshold 0.22 --mar-threshold 0.70
 
-# Executar comando customizado
-docker-compose run fatigue-sensor python3 exemplos_uso.py
+# Executar exemplos de uso pré-configurados
+docker-compose run --rm fatigue-sensor python3 exemplos_uso.py
+
+# Executar exemplo específico (modo rigoroso)
+docker-compose run --rm fatigue-sensor python3 -c "
+import exemplos_uso
+exemplos_uso.exemplo_deteccao_rigorosa()
+"
+```
+
+### Perfis de Detecção Disponíveis
+
+O sistema inclui diferentes perfis otimizados para cenários específicos:
+
+```bash
+# Modo Padrão - Uso geral
+docker-compose run --rm fatigue-sensor python3 main.py
+
+# Modo Sensível - Para motoristas experientes
+docker-compose run --rm fatigue-sensor python3 main.py --ear-threshold 0.22 --mar-threshold 0.60
+
+# Modo Rigoroso - Para situações de alto risco
+docker-compose run --rm fatigue-sensor python3 main.py --ear-threshold 0.28 --mar-threshold 0.55
+
+# Modo Permissivo - Para condições de pouca luz
+docker-compose run --rm fatigue-sensor python3 main.py --ear-threshold 0.20 --mar-threshold 0.70
 ```
 
 ### Modo Desenvolvimento
 
 ```bash
-# Ativar modo desenvolvimento (bash interativo)
+# Ativar container de desenvolvimento com shell interativo
 docker-compose --profile dev up fatigue-sensor-dev
 
 # Executar bash no container em execução
 docker-compose exec fatigue-sensor bash
+
+# Montar código local para desenvolvimento (modo dev já configurado)
+# O perfil 'dev' mapeia automaticamente o código local para /app
 ```
 
 ### Múltiplas Câmeras
 
-Se você possui múltiplas câmeras, edite o `docker-compose.yml`:
+Para sistemas com múltiplas câmeras, edite o `docker-compose.yml`:
 
 ```yaml
 devices:
   - /dev/video0:/dev/video0    # Câmera principal
   - /dev/video1:/dev/video1    # Câmera secundária
   - /dev/video2:/dev/video2    # Câmera adicional
+  # Adicione quantas câmeras precisar
+```
+
+### Configurações de Áudio Avançadas
+
+```bash
+# Verificar configuração atual do PulseAudio
+docker-compose exec fatigue-sensor pulseaudio --check
+
+# Testar áudio no container
+docker-compose exec fatigue-sensor pactl list short sinks
+
+# Para sistemas com PipeWire (alternativa ao PulseAudio)
+# Editar docker-compose.yml para mapear sockets do PipeWire
 ```
 
 ## 🔧 Resolução de Problemas
 
 ### Problema: "Não foi possível acessar a câmera"
 
-**Soluções:**
-
+**Diagnóstico:**
 ```bash
-# Verificar permissões de dispositivos
+# Verificar se câmera está disponível no host
 ls -la /dev/video*
+v4l2-ctl --list-devices  # Se disponível
 
-# Adicionar usuário aos grupos necessários
-sudo usermod -a -G video $USER
-sudo usermod -a -G audio $USER
-
-# Reiniciar sessão ou executar com sudo temporariamente
+# Verificar permissões
+groups $USER | grep -E "(video|audio)"
 ```
 
-### Problema: "Display não encontrado"
-
 **Soluções:**
+```bash
+# Adicionar usuário aos grupos necessários
+sudo usermod -a -G video,audio $USER
 
+# Dar permissões temporárias aos dispositivos
+sudo chmod 666 /dev/video0
+sudo chmod -R 666 /dev/snd/
+
+# Reiniciar sessão para aplicar mudanças de grupo
+# ou executar temporariamente com sudo
+sudo docker-compose up
+```
+
+### Problema: "Display não encontrado" / "Interface não aparece"
+
+**Para Linux/WSL2:**
 ```bash
 # Verificar variável DISPLAY
 echo $DISPLAY
@@ -155,81 +228,169 @@ echo $DISPLAY
 # Reconfigurar X11
 xhost +local:docker
 
-# Para WSL, pode ser necessário
+# Para WSL2 especificamente
 export DISPLAY=:0
+# ou para Windows 11 com WSLg
+export DISPLAY=:0.0
+```
+
+**Para Windows com WSL2:**
+```bash
+# Instalar servidor X11 (escolha um):
+# VcXsrv, Xming, ou usar WSLg nativo (Windows 11)
+
+# Configurar DISPLAY para servidor X externo
+export DISPLAY=host.docker.internal:0.0
+```
+
+**Para macOS:**
+```bash
+# Instalar XQuartz
+brew install --cask xquartz
+
+# Configurar XQuartz
+xhost +localhost
+export DISPLAY=host.docker.internal:0
 ```
 
 ### Problema: "Som não funciona"
 
-**Soluções:**
-
+**Diagnóstico:**
 ```bash
-# Verificar PulseAudio
+# Verificar status do PulseAudio
 pulseaudio --check
+systemctl --user status pulseaudio
 
+# Listar dispositivos de áudio
+pactl list short sinks
+```
+
+**Soluções:**
+```bash
 # Reiniciar PulseAudio
 pulseaudio --kill
 pulseaudio --start
 
-# Verificar dispositivos de áudio
-pactl list short sinks
+# Para sistemas sem PulseAudio (usar ALSA)
+# Modificar docker-compose.yml para mapear dispositivos ALSA
+
+# Verificar se container tem acesso ao áudio
+docker-compose exec fatigue-sensor ls -la /dev/snd/
 ```
 
 ### Problema: "Permission denied" em dispositivos
 
-**Soluções:**
-
+**Solução temporária:**
 ```bash
-# Dar permissões temporárias
 sudo chmod 666 /dev/video0
-sudo chmod 666 /dev/snd/*
+sudo chmod -R 666 /dev/snd/
+```
 
-# Solução permanente: adicionar regras udev
-sudo nano /etc/udev/rules.d/99-webcam.rules
-# Adicionar:
-# SUBSYSTEM=="video4linux", GROUP="video", MODE="0664"
-# SUBSYSTEM=="sound", GROUP="audio", MODE="0664"
+**Solução permanente (criar regras udev):**
+```bash
+# Criar arquivo de regras
+sudo nano /etc/udev/rules.d/99-fatigue-sensor.rules
+
+# Adicionar conteúdo:
+SUBSYSTEM=="video4linux", GROUP="video", MODE="0666"
+SUBSYSTEM=="sound", GROUP="audio", MODE="0666"
+KERNEL=="controlC[0-9]*", GROUP="audio", MODE="0666"
+
+# Recarregar regras
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
+### Problema: "Modelo de marcos faciais não encontrado"
+
+**Solução automática:**
+```bash
+# O install.sh baixa automaticamente, mas se precisar fazer manualmente:
+wget -O shape_predictor_68_face_landmarks.dat \
+  "https://huggingface.co/spaces/asdasdasdasd/Face-forgery-detection/resolve/ccfc24642e0210d4d885bc7b3dbc9a68ed948ad6/shape_predictor_68_face_landmarks.dat"
+
+# Verificar se arquivo foi baixado corretamente (deve ter ~68MB)
+ls -lh shape_predictor_68_face_landmarks.dat
 ```
 
 ## 🐛 Debug e Desenvolvimento
 
-### Executar com Debug
+### Executar com Debug Avançado
 
 ```bash
-# Habilitar logs verbose
-docker-compose run fatigue-sensor python3 -u main.py
+# Habilitar logs verbose do Python
+docker-compose run --rm fatigue-sensor python3 -u main.py
 
-# Executar com Python em modo debug
-docker-compose run fatigue-sensor python3 -m pdb main.py
+# Executar com debugger interativo
+docker-compose run --rm fatigue-sensor python3 -m pdb main.py
+
+# Executar com logs de OpenCV detalhados
+docker-compose run --rm -e OPENCV_LOG_LEVEL=DEBUG fatigue-sensor python3 main.py
 ```
 
 ### Inspeção do Container
 
 ```bash
-# Listar containers
+# Listar todos os containers
 docker ps -a
 
-# Executar bash no container
+# Executar comandos no container ativo
 docker exec -it fatigue-sensor bash
+docker exec -it fatigue-sensor python3 --version
 
-# Verificar logs do sistema
-docker logs fatigue-sensor
+# Verificar logs detalhados do container
+docker logs --details fatigue-sensor
+
+# Inspecionar configuração do container
+docker inspect fatigue-sensor
+```
+
+### Testes de Funcionalidade
+
+```bash
+# Testar detecção de câmera
+docker-compose run --rm fatigue-sensor python3 -c "
+import cv2
+cap = cv2.VideoCapture(0)
+print('Câmera disponível:', cap.isOpened())
+cap.release()
+"
+
+# Testar carregamento do modelo dlib
+docker-compose run --rm fatigue-sensor python3 -c "
+import dlib
+import os
+if os.path.exists('shape_predictor_68_face_landmarks.dat'):
+    predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
+    print('Modelo carregado com sucesso')
+else:
+    print('Modelo não encontrado')
+"
+
+# Executar exemplos de uso para testes
+docker-compose run --rm fatigue-sensor python3 exemplos_uso.py
 ```
 
 ### Limpeza do Sistema
 
 ```bash
 # Remover containers parados
-docker container prune
+docker container prune -f
 
 # Remover imagens não utilizadas
-docker image prune
+docker image prune -f
 
-# Limpeza completa (CUIDADO!)
-docker system prune -a
+# Remover volumes órfãos
+docker volume prune -f
+
+# Limpeza completa (CUIDADO! Remove tudo não usado)
+docker system prune -a -f
+
+# Limpeza específica do projeto
+docker-compose down -v --rmi all
 ```
 
-## 📊 Monitoramento
+## 📊 Monitoramento e Performance
 
 ### Recursos do Container
 
@@ -237,35 +398,63 @@ docker system prune -a
 # Estatísticas em tempo real
 docker stats fatigue-sensor
 
-# Uso de recursos
+# Uso detalhado de recursos
 docker-compose top
+
+# Verificar limites de recurso
+docker inspect fatigue-sensor | grep -A 10 "Memory"
 ```
 
-### Verificação de Saúde
+### Verificação de Saúde do Sistema
 
 ```bash
 # Status dos serviços
 docker-compose ps
 
-# Verificar se aplicação está respondendo
+# Verificar processos em execução no container
 docker-compose exec fatigue-sensor ps aux
+
+# Teste de conectividade com dispositivos
+docker-compose exec fatigue-sensor ls -la /dev/video* /dev/snd/
+
+# Verificar variáveis de ambiente
+docker-compose exec fatigue-sensor env | grep -E "(DISPLAY|PULSE)"
 ```
 
-## 🔒 Segurança
+### Otimização de Performance
+
+```bash
+# Executar com diferentes resoluções (modificar main.py se necessário)
+# Ou usar parâmetros para reduzir processamento
+
+# Monitorar FPS em tempo real
+docker-compose logs -f | grep "FPS"
+
+# Para GPUs NVIDIA (se disponível)
+# Instalar nvidia-docker2 e modificar docker-compose.yml:
+#   runtime: nvidia
+#   environment:
+#     - NVIDIA_VISIBLE_DEVICES=all
+```
+
+## 🔒 Segurança e Boas Práticas
 
 ### Usuário Não-Root
 
-O container executa com usuário não-root (`appuser`) por segurança:
+O container executa com usuário não-privilegiado (`appuser`) por segurança:
 
 ```bash
 # Verificar usuário atual no container
 docker-compose exec fatigue-sensor whoami
 docker-compose exec fatigue-sensor id
+
+# Verificar proprietário dos arquivos
+docker-compose exec fatigue-sensor ls -la /app
 ```
 
 ### Limitação de Recursos
 
-Para limitar recursos do container, edite `docker-compose.yml`:
+Edite `docker-compose.yml` para limitar recursos:
 
 ```yaml
 services:
@@ -274,44 +463,208 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
-          memory: 2G
+          cpus: '2.0'          # Máximo 2 CPUs
+          memory: 2G           # Máximo 2GB RAM
         reservations:
-          memory: 512M
+          cpus: '0.5'          # Reserva mínima de 0.5 CPU
+          memory: 512M         # Reserva mínima de 512MB
+    
+    # Alternativamente, usando sintaxe v2 do Compose:
+    mem_limit: 2g
+    memswap_limit: 2g
+    cpus: 2.0
+```
+
+### Isolamento de Rede
+
+```yaml
+# Para maior segurança, use rede personalizada
+networks:
+  fatigue-sensor-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+services:
+  fatigue-sensor:
+    networks:
+      - fatigue-sensor-net
 ```
 
 ## 📁 Estrutura de Arquivos Docker
 
 ```txt
 fatigue-sensor/
-├── Dockerfile              # Definição da imagem
-├── docker-compose.yml      # Orquestração dos serviços
-├── .dockerignore           # Arquivos excluídos do build
-├── install.sh              # Script de instalação automática
-├── DOCKER.md               # Este guia
-└── .env                    # Variáveis de ambiente (criado automaticamente)
+├── 📁 Arquivos Docker
+│   ├── Dockerfile                    # Definição da imagem principal
+│   ├── docker-compose.yml            # Orquestração dos serviços
+│   ├── .dockerignore                 # Arquivos excluídos do build
+│   └── install.sh                    # Script de instalação automática
+├── 📁 Código Principal
+│   ├── main.py                       # Aplicação principal
+│   ├── exemplos_uso.py               # Exemplos e perfis de detecção
+│   └── requirements.txt              # Dependências Python
+├── 📁 Modelos e Dados
+│   └── shape_predictor_68_face_landmarks.dat  # Modelo de marcos faciais
+├── 📁 Configuração
+│   ├── .env                          # Variáveis de ambiente (criado automaticamente)
+│   └── .gitignore                    # Arquivos ignorados pelo Git
+└── 📁 Documentação
+    ├── README.md                     # Documentação principal
+    ├── DOCKER.md                     # Este guia Docker
+    └── LICENSE                       # Licença do projeto
+```
+
+## 🎯 Casos de Uso Específicos
+
+### Ambiente de Produção
+
+```bash
+# Para uso em produção, configure:
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# docker-compose.prod.yml example:
+# version: '3.8'
+# services:
+#   fatigue-sensor:
+#     restart: always
+#     logging:
+#       driver: "json-file"
+#       options:
+#         max-size: "10m"
+#         max-file: "3"
+```
+
+### Desenvolvimento e Testes
+
+```bash
+# Usar perfil de desenvolvimento
+docker-compose --profile dev up fatigue-sensor-dev
+
+# Executar testes unitários (se implementados)
+docker-compose run --rm fatigue-sensor python3 -m pytest tests/
+
+# Verificar diferentes cenários
+docker-compose run --rm fatigue-sensor python3 exemplos_uso.py
+```
+
+### Integração Contínua
+
+```yaml
+# Exemplo para .github/workflows/docker.yml
+name: Docker Build and Test
+on: [push, pull_request]
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Docker image
+        run: docker build -t fatigue-sensor .
+      - name: Test container
+        run: |
+          docker run --rm fatigue-sensor python3 -c "import main; print('Import successful')"
 ```
 
 ## 🤝 Contribuições
 
 Para contribuir com melhorias no setup Docker:
 
-1. Fork o projeto
-2. Crie branch: `git checkout -b feature/docker-improvement`
-3. Teste as mudanças: `docker-compose up --build`
-4. Commit: `git commit -m 'Improve Docker setup'`
-5. Push: `git push origin feature/docker-improvement`
-6. Abra Pull Request
+1. **Fork o projeto**
+```bash
+git clone https://github.com/seu-usuario/fatigue-sensor.git
+cd fatigue-sensor
+```
 
-## 📞 Suporte
+2. **Crie uma branch para sua feature**
+```bash
+git checkout -b feature/docker-improvement
+```
 
-Se encontrar problemas com o Docker:
+3. **Teste suas mudanças extensivamente**
+```bash
+# Teste build limpo
+docker-compose build --no-cache
 
-1. Verifique os logs: `docker-compose logs`
-2. Execute o diagnóstico: `./install.sh`
-3. Consulte a seção de resolução de problemas acima
-4. Abra uma issue no repositório com detalhes do erro
+# Teste execução
+docker-compose up --build
+
+# Teste diferentes cenários
+docker-compose --profile dev up fatigue-sensor-dev
+```
+
+4. **Commit suas mudanças**
+```bash
+git commit -m 'feat: improve Docker configuration for better audio support'
+```
+
+5. **Push e abra Pull Request**
+```bash
+git push origin feature/docker-improvement
+```
+
+### Checklist para Contribuições Docker
+
+- [ ] Dockerfile funciona em diferentes arquiteturas (x86_64, ARM64)
+- [ ] docker-compose.yml está bem documentado
+- [ ] install.sh funciona em diferentes distribuições Linux
+- [ ] Testes passam no container
+- [ ] Documentação atualizada
+- [ ] Exemplo de uso funciona corretamente
+
+## 📞 Suporte e Ajuda
+
+### Diagnóstico Rápido
+
+Execute o diagnóstico automático:
+
+```bash
+# Script de diagnóstico completo
+./install.sh
+
+# Ou verificação manual rápida
+docker --version && docker-compose --version
+ls /dev/video* /dev/snd/
+echo $DISPLAY
+xhost +local:docker 2>/dev/null || echo "X11 não configurado"
+```
+
+### Onde Buscar Ajuda
+
+1. **Logs do sistema**: `docker-compose logs -f`
+2. **Documentação oficial**: Este arquivo e README.md
+3. **Issues no GitHub**: Para problemas específicos
+4. **Comunidade Docker**: Para problemas gerais de containerização
+
+### Informações Úteis para Reportar Problemas
+
+Ao reportar um problema, inclua:
+
+```bash
+# Informações do sistema
+uname -a
+docker --version
+docker-compose --version
+
+# Status dos dispositivos
+ls -la /dev/video* 2>/dev/null || echo "Nenhuma câmera encontrada"
+ls -la /dev/snd/ 2>/dev/null || echo "Nenhum dispositivo de áudio"
+
+# Variáveis de ambiente relevantes
+echo "DISPLAY: $DISPLAY"
+echo "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"
+
+# Logs do container
+docker-compose logs --tail=50
+```
 
 ---
 
-### Desenvolvido com ❤️ para facilitar o desenvolvimento e implantação
+### 🎉 Desenvolvido com ❤️ para facilitar o desenvolvimento e implantação
+
+**Versão da documentação**: 2.0  
+**Última atualização**: 2024  
+**Compatibilidade**: Docker 20.10+, Docker Compose 2.0+
+
+> 💡 **Dica**: Execute `./install.sh` para configuração automática e rápida!
