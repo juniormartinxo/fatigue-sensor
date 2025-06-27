@@ -3,6 +3,7 @@
 ![Python](https://img.shields.io/badge/python-v3.7+-blue.svg)
 ![OpenCV](https://img.shields.io/badge/OpenCV-4.0+-green.svg)
 ![Dlib](https://img.shields.io/badge/dlib-19.0+-orange.svg)
+![Docker](https://img.shields.io/badge/docker-supported-blue.svg)
 ![Status](https://img.shields.io/badge/status-ativo-brightgreen.svg)
 
 Sistema completo de detecção de fadiga em tempo real utilizando visão computacional para análise facial, focado na segurança de motoristas através do monitoramento de padrões de piscada e detecção de bocejos.
@@ -97,14 +98,115 @@ pygame>=2.0.0
 
 ## 🚀 Instalação
 
-### 1. Clone o Repositório
+### 🐳 Opção 1: Docker (Recomendado)
+
+A instalação via Docker é a forma mais rápida e confiável de executar o FatigueSensor, pois elimina problemas de dependências e configuração.
+
+#### Pré-requisitos
+
+- Docker instalado ([Guia de Instalação do Docker](https://docs.docker.com/get-docker/))
+- Câmera conectada ao sistema
+
+#### Setup Automático (Recomendado)
+
+```bash
+# Clone o repositório
+git clone https://github.com/seu-usuario/FatigueSensor.git
+cd FatigueSensor
+
+# Execute o script de instalação automática
+chmod +x install.sh
+./install.sh
+```
+
+O script automaticamente:
+- ✅ Verifica se Docker e Docker Compose estão instalados
+- ✅ Baixa o modelo de marcos faciais necessário
+- ✅ Configura permissões do X11 para interface gráfica
+- ✅ Verifica dispositivos de câmera e áudio
+- ✅ Cria arquivo de configuração (.env)
+- ✅ Mostra todos os comandos disponíveis
+
+#### Setup Manual
+
+```bash
+# Clone o repositório
+git clone https://github.com/seu-usuario/FatigueSensor.git
+cd FatigueSensor
+
+# Construir a imagem Docker
+docker build -t fatigue-sensor .
+
+# Executar o container (Linux)
+docker run --rm -it \
+  --device=/dev/video0 \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+  fatigue-sensor
+
+# Executar o container (Windows com WSL2)
+docker run --rm -it \
+  --device=/dev/video0 \
+  -e DISPLAY=host.docker.internal:0.0 \
+  fatigue-sensor
+
+# Executar com parâmetros personalizados
+docker run --rm -it \
+  --device=/dev/video0 \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+  fatigue-sensor \
+  python3 main.py --ear-threshold 0.22 --mar-threshold 0.68
+```
+
+#### Dockerfile Incluído
+
+O projeto já inclui um `Dockerfile` otimizado que:
+
+- Instala todas as dependências necessárias do sistema
+- Baixa automaticamente o modelo de marcos faciais
+- Configura o ambiente adequadamente para OpenCV e dlib
+- Inclui configurações de segurança e áudio
+
+#### Alternativa: Docker Compose (Ainda Mais Simples)
+
+O projeto já inclui um arquivo `docker-compose.yml` completo com configurações avançadas:
+
+- **Serviço Principal**: Execução padrão do FatigueSensor
+- **Serviço de Desenvolvimento**: Para debug e modificações (profile `dev`)
+- **Configurações de Áudio**: Suporte completo ao PulseAudio
+- **Múltiplas Câmeras**: Suporte para webcam principal e secundária
+- **Privilégios Apropriados**: Configurações de segurança otimizadas
+
+```bash
+# Executar o serviço principal
+docker-compose up --build
+
+# Executar em background
+docker-compose up -d
+
+# Executar serviço de desenvolvimento (com shell interativo)
+docker-compose --profile dev up fatigue-sensor-dev
+
+# Parar todos os serviços
+docker-compose down
+
+# Ver logs em tempo real
+docker-compose logs -f
+```
+
+### 🔧 Opção 2: Instalação Local
+
+Para desenvolvedores que preferem controle total sobre o ambiente ou precisam modificar o código.
+
+#### 1. Clone o Repositório
 
 ```bash
 git clone https://github.com/seu-usuario/FatigueSensor.git
 cd FatigueSensor
 ```
 
-### 2. Crie um Ambiente Virtual (Recomendado)
+#### 2. Crie um Ambiente Virtual (Recomendado)
 
 ```bash
 python -m venv venv
@@ -116,13 +218,13 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-### 3. Instale as Dependências
+#### 3. Instale as Dependências
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Baixe o Modelo de Marcos Faciais
+#### 4. Baixe o Modelo de Marcos Faciais
 
 ```bash
 # Opção 1: Download direto (Linux/macOS)
@@ -132,10 +234,38 @@ wget https://huggingface.co/spaces/asdasdasdasd/Face-forgery-detection/resolve/c
 # Baixe o arquivo do link acima e coloque na pasta raiz do projeto
 ```
 
-### 5. Verifique a Instalação
+#### 5. Verifique a Instalação
 
 ```bash
 python main.py --help
+```
+
+### 🆚 Comparação das Opções
+
+| Aspecto | Docker (com script) | Instalação Local |
+|---------|--------------------|--------------------|
+| **Facilidade de Setup** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
+| **Download Automático** | ⭐⭐⭐⭐⭐ | ⭐⭐ |
+| **Consistência entre SOs** | ⭐⭐⭐⭐⭐ | ⭐⭐ |
+| **Desenvolvimento/Debug** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| **Performance** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| **Requisitos de Sistema** | Docker + 2GB extra | Python + dependências |
+| **Tempo de Setup** | ~2 minutos | ~10 minutos |
+
+### 🐧 Configuração Adicional para Linux
+
+Se estiver usando Docker no Linux, pode ser necessário configurar o X11:
+
+```bash
+# Permitir conexões X11
+xhost +local:docker
+
+# Executar o container
+docker run --rm -it \
+  --device=/dev/video0 \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+  fatigue-sensor
 ```
 
 ## 💻 Como Usar
@@ -250,6 +380,53 @@ MAR = (|p51-p59| + |p53-p57|) / (2 * |p49-p55|)
 - **Retângulo Azul**: Área facial detectada
 
 ## 🔧 Resolução de Problemas
+
+### Problemas Específicos do Docker
+
+#### "Erro: não é possível acessar a câmera no container"
+
+**Soluções**:
+```bash
+# Verificar se a câmera está disponível
+ls -la /dev/video*
+
+# Verificar se o usuário está no grupo video
+sudo usermod -a -G video $USER
+
+# Dar permissões ao X11 (Linux)
+xhost +local:docker
+```
+
+#### "Interface gráfica não aparece"
+
+**Soluções**:
+```bash
+# Para WSL2 (Windows)
+# Instalar um servidor X11 como VcXsrv ou Xming
+# Configurar DISPLAY=host.docker.internal:0.0
+
+# Para macOS
+# Instalar XQuartz e configurar
+brew install --cask xquartz
+xhost +localhost
+
+# Para Linux
+xhost +local:docker
+```
+
+#### "Container não constrói corretamente"
+
+**Soluções**:
+```bash
+# Limpar cache do Docker
+docker system prune -a
+
+# Construir sem cache
+docker build --no-cache -t fatigue-sensor .
+
+# Verificar logs de construção
+docker build -t fatigue-sensor . --progress=plain
+```
 
 ### Problemas Comuns
 
