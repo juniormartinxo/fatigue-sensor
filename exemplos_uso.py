@@ -93,7 +93,8 @@ def exemplo_monitoramento_metricas():
         blink_rate = detector.calculate_blink_rate()
         yawn_freq = detector.calculate_yawn_frequency()
 
-        print(f"\nMétricas após simulação:")
+        print("\nMétricas após simulação:")
+        print("-" * 30)
         print(f"Taxa de piscadas: {blink_rate:.1f} por minuto")
         print(f"Frequência de bocejos: {yawn_freq:.1f} por minuto")
 
