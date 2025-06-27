@@ -282,8 +282,8 @@ services:
 
 ## 📁 Estrutura de Arquivos Docker
 
-```
-sono/
+```txt
+fatigue-sensor/
 ├── Dockerfile              # Definição da imagem
 ├── docker-compose.yml      # Orquestração dos serviços
 ├── .dockerignore           # Arquivos excluídos do build
@@ -314,4 +314,4 @@ Se encontrar problemas com o Docker:
 
 ---
 
-**Desenvolvido com ❤️ para facilitar o desenvolvimento e implantação** 
+### Desenvolvido com ❤️ para facilitar o desenvolvimento e implantação
