@@ -44,6 +44,7 @@ chmod +x install.sh
 ```
 
 **O que o script faz automaticamente:**
+
 - ✅ Verifica pré-requisitos (Docker, câmera, áudio)
 - ✅ Configura permissões do X11 para interface gráfica
 - ✅ Baixa o modelo de marcos faciais (shape_predictor_68_face_landmarks.dat)
@@ -195,6 +196,7 @@ docker-compose exec fatigue-sensor pactl list short sinks
 ### Problema: "Não foi possível acessar a câmera"
 
 **Diagnóstico:**
+
 ```bash
 # Verificar se câmera está disponível no host
 ls -la /dev/video*
@@ -205,6 +207,7 @@ groups $USER | grep -E "(video|audio)"
 ```
 
 **Soluções:**
+
 ```bash
 # Adicionar usuário aos grupos necessários
 sudo usermod -a -G video,audio $USER
@@ -221,6 +224,7 @@ sudo docker-compose up
 ### Problema: "Display não encontrado" / "Interface não aparece"
 
 **Para Linux/WSL2:**
+
 ```bash
 # Verificar variável DISPLAY
 echo $DISPLAY
@@ -235,6 +239,7 @@ export DISPLAY=:0.0
 ```
 
 **Para Windows com WSL2:**
+
 ```bash
 # Instalar servidor X11 (escolha um):
 # VcXsrv, Xming, ou usar WSLg nativo (Windows 11)
@@ -244,6 +249,7 @@ export DISPLAY=host.docker.internal:0.0
 ```
 
 **Para macOS:**
+
 ```bash
 # Instalar XQuartz
 brew install --cask xquartz
@@ -256,6 +262,7 @@ export DISPLAY=host.docker.internal:0
 ### Problema: "Som não funciona"
 
 **Diagnóstico:**
+
 ```bash
 # Verificar status do PulseAudio
 pulseaudio --check
@@ -266,6 +273,7 @@ pactl list short sinks
 ```
 
 **Soluções:**
+
 ```bash
 # Reiniciar PulseAudio
 pulseaudio --kill
@@ -281,12 +289,14 @@ docker-compose exec fatigue-sensor ls -la /dev/snd/
 ### Problema: "Permission denied" em dispositivos
 
 **Solução temporária:**
+
 ```bash
 sudo chmod 666 /dev/video0
 sudo chmod -R 666 /dev/snd/
 ```
 
 **Solução permanente (criar regras udev):**
+
 ```bash
 # Criar arquivo de regras
 sudo nano /etc/udev/rules.d/99-fatigue-sensor.rules
@@ -304,6 +314,7 @@ sudo udevadm trigger
 ### Problema: "Modelo de marcos faciais não encontrado"
 
 **Solução automática:**
+
 ```bash
 # O install.sh baixa automaticamente, mas se precisar fazer manualmente:
 wget -O shape_predictor_68_face_landmarks.dat \
@@ -571,18 +582,22 @@ jobs:
 
 Para contribuir com melhorias no setup Docker:
 
-1. **Fork o projeto**
+1 - **Fork o projeto**
+
 ```bash
 git clone https://github.com/seu-usuario/fatigue-sensor.git
+
 cd fatigue-sensor
 ```
 
-2. **Crie uma branch para sua feature**
+2 - **Crie uma branch para sua feature**
+
 ```bash
 git checkout -b feature/docker-improvement
 ```
 
-3. **Teste suas mudanças extensivamente**
+3 - **Teste suas mudanças extensivamente**
+
 ```bash
 # Teste build limpo
 docker-compose build --no-cache
@@ -594,12 +609,14 @@ docker-compose up --build
 docker-compose --profile dev up fatigue-sensor-dev
 ```
 
-4. **Commit suas mudanças**
+4 - **Commit suas mudanças**
+
 ```bash
 git commit -m 'feat: improve Docker configuration for better audio support'
 ```
 
-5. **Push e abra Pull Request**
+5 - **Push e abra Pull Request**
+
 ```bash
 git push origin feature/docker-improvement
 ```
